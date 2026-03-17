@@ -1,150 +1,134 @@
 import React, { useState } from "react";
 
 function App() {
-  // 1. Unificamos todos los campos en un solo objeto de estado
+  // 1. Form data state (inputs)
   const [formData, setFormData] = useState({
-    empresa: "",
-    direccion1: "",
-    direccion2: "",
-    codigoPostal: "", // Antes era 'number', ahora es parte del objeto
+    company: "",
+    address1: "",
+    address2: "",
+    zipCode: "",
     email: "",
   });
 
-  // 2. Estado para manejar los mensajes de error de cada campo
-  const [errors, setErrors] = useState({});
+  // 2. Banks state (Array of objects for map)
+  const [banks, setBanks] = useState([
+    { id: 1, name: "Santander", checked: false },
+    { id: 2, name: "BBVA", checked: false },
+    { id: 3, name: "Galicia", checked: false },
+    { id: 4, name: "Nación", checked: false },
+    { id: 5, name: "Macro", checked: false },
+  ]);
 
-  // 3. Función de cambio única para TODOS los inputs
+  // 3. States for errors and final render
+  const [errors, setErrors] = useState({});
+  const [renderedList, setRenderedList] = useState([]);
+
+  // 4. Handle text inputs
   const handleChange = (e) => {
     const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Limpiamos el error visual apenas el usuario empiece a corregir
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
-  // 4. Función de envío con validaciones manuales (sin recarga)
+  // 5. Handle checkboxes logic
+  const handleBankChange = (id) => {
+    const updatedBanks = banks.map((bank) => {
+      if (bank.id === id) {
+        const updatedBank = { ...bank, checked: !bank.checked };
+
+        // Immediate removal if unchecked
+        if (updatedBank.checked === false) {
+          setRenderedList(renderedList.filter((item) => item !== bank.name));
+        }
+        return updatedBank;
+      }
+      return bank;
+    });
+    setBanks(updatedBanks);
+  };
+
+  // 6. Form Submission & Validation
   const handleSubmit = (e) => {
-    e.preventDefault(); // <--- Detiene la recarga de la página
+    e.preventDefault();
     let newErrors = {};
 
-    // Validación Manual: Empresa
-    if (formData.empresa.length <= 1 || formData.empresa.length > 60) {
-      newErrors.empresa = "La empresa debe tener entre 2 y 60 caracteres.";
+    if (formData.company.length <= 1 || formData.company.company > 60) {
+      newErrors.company = "La empresa debe tener entre 2 y 60 caracteres.";
     }
-
-    // Validación Manual: Dirección 1
-    if (formData.direccion1.length <= 1 || formData.direccion1.length > 60) {
-      newErrors.direccion1 =
-        "La dirección 1 debe tener entre 2 y 60 caracteres.";
+    if (formData.address1.length <= 1 || formData.address1.length > 60) {
+      newErrors.address1 = "La dirección 1 debe tener entre 2 y 60 caracteres.";
     }
-
-    // Validación Manual: Dirección 2
-    if (formData.direccion2.length <= 1 || formData.direccion2.length > 60) {
-      newErrors.direccion2 =
-        "La dirección 2 debe tener entre 2 y 60 caracteres.";
+    if (formData.zipCode.length < 1 || formData.zipCode.length > 10) {
+      newErrors.zipCode = "El código postal debe tener entre 1 y 10 dígitos.";
     }
-
-    // Validación Manual: Código Postal (1 a 10 dígitos)
-    if (formData.codigoPostal.length < 1 || formData.codigoPostal.length > 10) {
-      newErrors.codigoPostal =
-        "El código postal debe tener entre 1 y 10 dígitos.";
-    }
-
-    // Validación Manual: Email (Regex)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       newErrors.email = "El formato de correo no es válido.";
     }
 
-    // Si el objeto de errores tiene algo, lo guardamos y no avanzamos
+    // Bank Validation: Check if at least one is checked
+    const selectedBanks = banks
+      .filter((b) => b.checked === true)
+      .map((b) => b.name);
+
+    if (selectedBanks.length === 0) {
+      newErrors.banks = "Debes elegir al menos 1 banco.";
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
-    // Si pasa todas las validaciones
-    console.log("¡Formulario validado y listo!", formData);
-    alert("Formulario enviado con éxito (revisa la consola)");
+    // Success: Update the rendered list
+    setRenderedList(selectedBanks);
+    console.log("Form Data:", formData);
+    console.log("Selected Banks:", selectedBanks);
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "15px",
-          maxWidth: "400px",
-        }}
-      >
+    <div>
+      <form onSubmit={handleSubmit}>
+        {/* Text Inputs */}
         <div>
           <input
             type="text"
-            name="empresa"
-            value={formData.empresa}
+            name="company"
+            value={formData.company}
             onChange={handleChange}
-            placeholder="Nombre de Empresa"
-            style={{ width: "100%" }}
+            placeholder="Company Name"
           />
-          {errors.empresa && (
-            <div style={{ color: "red", fontSize: "12px" }}>
-              {errors.empresa}
-            </div>
+          {errors.company && (
+            <div style={{ color: "red" }}>{errors.company}</div>
           )}
         </div>
 
         <div>
           <input
             type="text"
-            name="direccion1"
-            value={formData.direccion1}
+            name="address1"
+            value={formData.address1}
             onChange={handleChange}
-            placeholder="Dirección 1"
-            style={{ width: "100%" }}
+            placeholder="Address 1"
           />
-          {errors.direccion1 && (
-            <div style={{ color: "red", fontSize: "12px" }}>
-              {errors.direccion1}
-            </div>
-          )}
-        </div>
-
-        <div>
-          <input
-            type="text"
-            name="direccion2"
-            value={formData.direccion2}
-            onChange={handleChange}
-            placeholder="Dirección 2"
-            style={{ width: "100%" }}
-          />
-          {errors.direccion2 && (
-            <div style={{ color: "red", fontSize: "12px" }}>
-              {errors.direccion2}
-            </div>
+          {errors.address1 && (
+            <div style={{ color: "red" }}>{errors.address1}</div>
           )}
         </div>
 
         <div>
           <input
             type="number"
-            name="codigoPostal"
-            value={formData.codigoPostal}
+            name="zipCode"
+            value={formData.zipCode}
             onChange={handleChange}
-            placeholder="Código Postal"
-            style={{ width: "100%" }}
+            placeholder="Zip Code"
           />
-          {errors.codigoPostal && (
-            <div style={{ color: "red", fontSize: "12px" }}>
-              {errors.codigoPostal}
-            </div>
+          {errors.zipCode && (
+            <div style={{ color: "red" }}>{errors.zipCode}</div>
           )}
         </div>
 
@@ -154,18 +138,37 @@ function App() {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            placeholder="Correo Electrónico"
-            style={{ width: "100%" }}
+            placeholder="Email"
           />
-          {errors.email && (
-            <div style={{ color: "red", fontSize: "12px" }}>{errors.email}</div>
-          )}
+          {errors.email && <div style={{ color: "red" }}>{errors.email}</div>}
         </div>
 
-        <button type="submit" style={{ padding: "10px", cursor: "pointer" }}>
-          Enviar Formulario
-        </button>
+        {/* Banks Checkboxes section */}
+        <h3>Select Banks:</h3>
+        {banks.map((bank) => (
+          <div key={bank.id}>
+            <input
+              type="checkbox"
+              checked={bank.checked}
+              onChange={() => handleBankChange(bank.id)}
+            />
+            <label>{bank.name}</label>
+          </div>
+        ))}
+        {errors.banks && <div style={{ color: "red" }}>{errors.banks}</div>}
+
+        <button type="submit">Submit Form</button>
       </form>
+
+      <hr />
+
+      {/* Rendered List Section */}
+      <h3>Rendered List:</h3>
+      <ul>
+        {renderedList.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
     </div>
   );
 }
