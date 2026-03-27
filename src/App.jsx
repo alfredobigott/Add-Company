@@ -4,6 +4,7 @@ function App() {
   const [formData, setFormData] = useState({
     company: "",
     address1: "",
+    address2: "",
     zipCode: "",
     email: "",
   });
@@ -17,7 +18,11 @@ function App() {
   ]);
 
   const [errors, setErrors] = useState({});
+
+  // Este estado solo se actualiza en el submit
   const [renderedList, setRenderedList] = useState([]);
+  // Este estado guarda la empresa que se mostró en el último submit
+  const [renderedCompany, setRenderedCompany] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,14 +30,11 @@ function App() {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
+  // CAMBIO: handleBankChange ya NO toca renderedList
   const handleBankChange = (id) => {
     const updatedBanks = banks.map((bank) => {
       if (bank.id === id) {
-        const updatedBank = { ...bank, checked: !bank.checked };
-        if (!updatedBank.checked) {
-          setRenderedList(renderedList.filter((item) => item !== bank.name));
-        }
-        return updatedBank;
+        return { ...bank, checked: !bank.checked };
       }
       return bank;
     });
@@ -44,11 +46,17 @@ function App() {
     e.preventDefault();
     let newErrors = {};
 
-    if (formData.company.length < 2)
-      newErrors.company = "Nombre demasiado corto.";
-    if (formData.address1.length < 2)
-      newErrors.address1 = "Dirección requerida.";
-    if (formData.zipCode.length < 1) newErrors.zipCode = "CP requerido.";
+    if (formData.company.length < 2 || formData.company.length > 60)
+      newErrors.company = "Nombre debe tener entre 2 y 60 caracteres.";
+    if (formData.address1.length < 2 || formData.address1.length > 60)
+      newErrors.address1 = "Dirección debe tener entre 2 y 60 caracteres.";
+    if (
+      formData.address2.length > 0 &&
+      (formData.address2.length < 2 || formData.address2.length > 60)
+    )
+      newErrors.address2 = "Dirección 2 debe tener entre 2 y 60 caracteres.";
+    if (formData.zipCode.length < 1 || formData.zipCode.length > 10)
+      newErrors.zipCode = "CP debe tener entre 1 y 10 caracteres.";
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) newErrors.email = "Email inválido.";
 
@@ -60,14 +68,23 @@ function App() {
       return;
     }
 
+    // CAMBIO: Aquí actualizamos ambos estados de renderizado
     setRenderedList(selectedBanks);
+    setRenderedCompany(formData.company);
   };
 
   const clearForm = () => {
-    setFormData({ company: "", address1: "", zipCode: "", email: "" });
+    setFormData({
+      company: "",
+      address1: "",
+      address2: "",
+      zipCode: "",
+      email: "",
+    });
     setBanks(banks.map((b) => ({ ...b, checked: false })));
     setErrors({});
     setRenderedList([]);
+    setRenderedCompany("");
   };
 
   return (
@@ -79,7 +96,7 @@ function App() {
             <h2 className="text-2xl font-bold text-slate-800">Bank Setup</h2>
             <button
               onClick={clearForm}
-              className="text-slate-500 underline text-sm hover:text-slate-800"
+              className="text-slate-500 underline text-sm hover:text-slate-800 cursor-pointer"
             >
               Clear All
             </button>
@@ -120,35 +137,58 @@ function App() {
               )}
             </div>
 
-            {/* Dirección y CP */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-slate-600 mb-2 text-sm font-medium">
-                  Address
-                </label>
-                <input
-                  type="text"
-                  name="address1"
-                  value={formData.address1}
-                  onChange={handleChange}
-                  className={`w-full p-3 border rounded-md outline-none transition-all font-bold ${errors.address1 ? "border-red-500" : "border-slate-300 focus:border-lime-500"}`}
-                />
-              </div>
-              <div>
-                <label className="block text-slate-600 mb-2 text-sm font-medium">
-                  Zip Code
-                </label>
-                <input
-                  type="number"
-                  name="zipCode"
-                  value={formData.zipCode}
-                  onChange={handleChange}
-                  className={`w-full p-3 border rounded-md outline-none transition-all font-bold ${errors.zipCode ? "border-red-500" : "border-slate-300 focus:border-lime-500"}`}
-                />
-              </div>
+            {/* Dirección 1 */}
+            <div>
+              <label className="block text-slate-600 mb-2 text-sm font-medium">
+                Address 1
+              </label>
+              <input
+                type="text"
+                name="address1"
+                value={formData.address1}
+                onChange={handleChange}
+                className={`w-full p-3 border rounded-md outline-none transition-all font-bold ${errors.address1 ? "border-red-500" : "border-slate-300 focus:border-lime-500"}`}
+              />
+              {errors.address1 && (
+                <p className="text-red-500 text-xs mt-1">{errors.address1}</p>
+              )}
             </div>
 
-            {/* Bancos (Estilo Checkbox de la imagen) */}
+            {/* Dirección 2 */}
+            <div>
+              <label className="block text-slate-600 mb-2 text-sm font-medium">
+                Address 2 (opcional)
+              </label>
+              <input
+                type="text"
+                name="address2"
+                value={formData.address2}
+                onChange={handleChange}
+                className={`w-full p-3 border rounded-md outline-none transition-all font-bold ${errors.address2 ? "border-red-500" : "border-slate-300 focus:border-lime-500"}`}
+              />
+              {errors.address2 && (
+                <p className="text-red-500 text-xs mt-1">{errors.address2}</p>
+              )}
+            </div>
+
+            {/* Zip Code */}
+            <div>
+              <label className="block text-slate-600 mb-2 text-sm font-medium">
+                Zip Code
+              </label>
+              <input
+                type="number"
+                name="zipCode"
+                value={formData.zipCode}
+                onChange={handleChange}
+                className={`w-full p-3 border rounded-md outline-none transition-all font-bold ${errors.zipCode ? "border-red-500" : "border-slate-300 focus:border-lime-500"}`}
+              />
+              {errors.zipCode && (
+                <p className="text-red-500 text-xs mt-1">{errors.zipCode}</p>
+              )}
+            </div>
+
+            {/* Bancos */}
             <div>
               <label className="block text-slate-600 mb-2 text-sm font-medium">
                 Select Banks
@@ -163,7 +203,7 @@ function App() {
                       type="checkbox"
                       checked={bank.checked}
                       onChange={() => handleBankChange(bank.id)}
-                      className="w-4 h-4 accent-lime-500"
+                      className="w-4 h-4 accent-lime-500 cursor-pointer"
                     />
                     <span className="ml-3 font-bold text-slate-800 text-sm">
                       {bank.name}
@@ -178,7 +218,7 @@ function App() {
 
             <button
               type="submit"
-              className="w-full md:w-auto flex items-center justify-center gap-3 bg-lime-400 hover:bg-lime-500 text-slate-900 font-bold py-4 px-10 rounded-full transition-transform active:scale-95 shadow-lg"
+              className="w-full md:w-auto flex items-center justify-center gap-3 bg-lime-400 hover:bg-lime-500 text-slate-900 font-bold py-4 px-10 rounded-full transition-transform active:scale-95 shadow-lg cursor-pointer"
             >
               <span className="text-xl">📊</span> Confirm Selection
             </button>
@@ -190,14 +230,14 @@ function App() {
           {renderedList.length === 0 ? (
             <>
               <div className="bg-slate-800 p-6 rounded-full mb-6">
-                <span className="text-5xl">🏦</span>
+                <span className="text-5xl">🏢</span>
               </div>
               <h3 className="text-white text-xl font-bold mb-4">
-                No banks selected
+                Crear tu empresa
               </h3>
               <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
-                Fill out the form and select your banks to see the generated
-                list here.
+                Completa el formulario y selecciona los bancos para configurar
+                tu empresa.
               </p>
             </>
           ) : (
@@ -213,7 +253,7 @@ function App() {
                   Company
                 </p>
                 <p className="text-white text-xl font-bold mb-4">
-                  {formData.company}
+                  {renderedCompany}
                 </p>
 
                 <p className="text-lime-400 text-xs uppercase tracking-widest font-bold mb-1">
