@@ -7,19 +7,21 @@ const CompanyForm = () => {
     address2: "",
     zipCode: "",
     email: "",
+    banks: [],
   });
 
   const [banks, setBanks] = useState([
-    { id: 1, name: "Santander", checked: false },
-    { id: 2, name: "BBVA", checked: false },
-    { id: 3, name: "Galicia", checked: false },
-    { id: 4, name: "Nación", checked: false },
-    { id: 5, name: "Macro", checked: false },
+    { id: 1, name: "Santander" },
+    { id: 2, name: "BBVA" },
+    { id: 3, name: "Galicia" },
+    { id: 4, name: "Nación" },
+    { id: 5, name: "Macro" },
   ]);
 
   const [errors, setErrors] = useState({});
   const [renderedList, setRenderedList] = useState([]);
   const [renderedCompany, setRenderedCompany] = useState("");
+  const [selectedBanks, setSelectedBanks] = useState([]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,7 +29,7 @@ const CompanyForm = () => {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const handleBankChange = (id) => {
+  /* const handleBankChange = (id) => {
     const updatedBanks = banks.map((bank) => {
       if (bank.id === id) {
         return { ...bank, checked: !bank.checked };
@@ -36,6 +38,18 @@ const CompanyForm = () => {
     });
     setBanks(updatedBanks);
     if (errors.banks) setErrors((prev) => ({ ...prev, banks: "" }));
+  };
+ */
+
+  const handleBankChange = (e, bank) => {
+    if (e.target.checked) {
+      setSelectedBanks((lastState) => [...lastState, bank]);
+    } else {
+      const selectedBanksfiltered = selectedBanks.filter(
+        (h) => h.id !== bank.id,
+      );
+      setSelectedBanks(selectedBanksfiltered);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -56,7 +70,6 @@ const CompanyForm = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) newErrors.email = "Email inválido.";
 
-    const selectedBanks = banks.filter((b) => b.checked).map((b) => b.name);
     if (selectedBanks.length === 0) newErrors.banks = "Elige al menos 1 banco.";
 
     if (Object.keys(newErrors).length > 0) {
@@ -64,8 +77,16 @@ const CompanyForm = () => {
       return;
     }
 
-    setRenderedList(selectedBanks);
+    /* const isSelected = selectedBanks.length > 0; */
+    setRenderedList(selectedBanks.map((b) => b.name));
+
+    setFormData((prev) => ({ ...prev, banks: selectedBanks }));
     setRenderedCompany(formData.company);
+
+    localStorage.setItem(
+      "companyData",
+      JSON.stringify({ ...formData, banks: selectedBanks }),
+    );
   };
 
   const clearForm = () => {
@@ -76,7 +97,7 @@ const CompanyForm = () => {
       zipCode: "",
       email: "",
     });
-    setBanks(banks.map((b) => ({ ...b, checked: false })));
+    setSelectedBanks([]);
     setErrors({});
     setRenderedList([]);
     setRenderedCompany("");
@@ -192,12 +213,12 @@ const CompanyForm = () => {
                 {banks.map((bank) => (
                   <label
                     key={bank.id}
-                    className={`flex items-center p-3 border rounded-md cursor-pointer transition-all ${bank.checked ? "bg-lime-50 border-lime-500" : "border-slate-300 hover:border-lime-500"}`}
+                    className={`flex items-center p-3 border rounded-md cursor-pointer transition-all ${selectedBanks.includes(bank.id) ? "bg-lime-50 border-lime-500" : "border-slate-300 hover:border-lime-500"}`}
                   >
                     <input
                       type="checkbox"
-                      checked={bank.checked}
-                      onChange={() => handleBankChange(bank.id)}
+                      /*  checked={bank.checked} */
+                      onChange={(e) => handleBankChange(e, bank)}
                       className="w-4 h-4 accent-lime-500 cursor-pointer"
                     />
                     <span className="ml-3 font-bold text-slate-800 text-sm">
