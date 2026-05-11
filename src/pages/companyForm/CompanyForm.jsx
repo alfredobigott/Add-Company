@@ -44,6 +44,7 @@ const CompanyForm = () => {
   const handleBankChange = (e, bank) => {
     if (e.target.checked) {
       setSelectedBanks((lastState) => [...lastState, bank]);
+      setErrors((prev) => ({ ...prev, banks: "" }));
     } else {
       const selectedBanksfiltered = selectedBanks.filter(
         (h) => h.id !== bank.id,
@@ -54,7 +55,10 @@ const CompanyForm = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setErrors({});
     let newErrors = {};
+
+    const formDataHandle = new FormData(e.currentTarget);
 
     if (formData.company.length < 2 || formData.company.length > 60)
       newErrors.company = "Nombre debe tener entre 2 y 60 caracteres.";
@@ -77,15 +81,27 @@ const CompanyForm = () => {
       return;
     }
 
+    const companyData = {
+      company: formDataHandle.get("company"),
+      address1: formDataHandle.get("address1"),
+      address2: formDataHandle.get("address2"),
+      zipCode: formDataHandle.get("zipCode"),
+      email: formDataHandle.get("email"),
+      banks: selectedBanks,
+    };
+
     /* const isSelected = selectedBanks.length > 0; */
     setRenderedList(selectedBanks.map((b) => b.name));
 
     setFormData((prev) => ({ ...prev, banks: selectedBanks }));
     setRenderedCompany(formData.company);
 
+    const storeCompany = localStorage.getItem("companyData");
+    const storeCompanyParse = storeCompany ? JSON.parse(storeCompany) : [];
+
     localStorage.setItem(
       "companyData",
-      JSON.stringify({ ...formData, banks: selectedBanks }),
+      JSON.stringify([companyData, ...storeCompanyParse]),
     );
   };
 
